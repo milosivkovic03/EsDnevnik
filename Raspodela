@@ -1,0 +1,84 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace E_Dnevnik
+{
+    public partial class Raspodela : Form
+    {
+        DataTable raspodela;
+        int broj_sloga = 0;
+        public Raspodela()
+        {
+            InitializeComponent();
+        }
+        private void Load_data()
+        {
+            SqlConnection veza = Konekcija.Connect();
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM raspodela", veza);
+            raspodela = new DataTable();
+            adapter.Fill(raspodela);
+        }
+        private void Raspodela_Load(object sender, EventArgs e)
+        {
+            Load_data();
+            ComboFill();
+        }
+        private void ComboFill()
+        {
+            SqlConnection veza = Konekcija.Connect();
+            SqlDataAdapter adapter;
+            DataTable dt.godina, dt.nastavnik, dt.predmet, dt.odeljenje;
+            adapter = new SqlDataAdapter("SELECT * FROM skolska_godina", veza);
+            dt_godina = new DataTable();
+            adapter.Fill(dt_godina);
+            dt_nastavnik = new DataTable();
+            adapter = new SqlDataAdapter("SELECT ime + prezime as naziv FROM osoba WHERE uloga = 2",veza);
+            adapter.Fill(dt_nastavnik);
+            dt_predmet = new DataTable();
+            adapter = new SqlDataAdapter("SELECT id, naziv FROM predmet",veza);
+            adapter.Fill(dt_predmet);
+            dt_odeljenje = new DataTable();
+            adapter = new SqlDataAdapter("SELECT id, STR(razred) + '-' + indeks as naziv FROM odeljenje",veza);
+            adapter.Fill(dt_odeljenje);
+            cmb_godina.DataSource = dt_godina;
+            cmb_godina.ValueMember = "id";
+            cmb_godina.DisplayMember = "naziv";
+            
+            cmb_nastavnik.DataSource = dt_nastavnik;
+            cmb_nastavnik.ValueMember = "id";
+            cmb_nastavnik.DisplayMember = "naziv";
+            
+            cmb_predmet.DataSource = dt_predmet;
+            cmb_predmet.ValueMember = "id";
+            cmb_predmet.DisplayMember = "naziv";
+            
+            cmb_odeljenje.DataSource = dt_odeljenje;
+            cmb_odeljenje.ValueMember = "id";
+            cmb_odeljenje.DisplayMember = "naziv";
+            
+            txt_id.Text = raspodela.Rows[broj_sloga]["id"].ToString();
+            if (raspodela.Rows.Count == 0)
+            {
+              cmb_godina.SelectedValue = -1;
+              cmb_nastavnik.SelectedValue = -1;
+              cmb_predmet.SelectedValue = -1;
+              cmb_odeljenje.SelectedValue = -1;
+            }
+            else
+            {
+              cmb_godina.SelectedValue = raspodela.Rows[broj_sloga]["godina_id"];
+              cmb_nastavnik.SelectedValue = raspodela.Rows[broj_sloga]["nastavnik_id"];
+              cmb_predmet.SelectedValue = raspodela.Rows[broj_sloga]["predmet_id"];
+              cmb_odeljenje.SelectedValue = raspodela.Rows[broj_sloga]["odeljenje_id"];
+            }            
+        }
+    }
+}
