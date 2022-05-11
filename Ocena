@@ -13,6 +13,8 @@ namespace E_Dnevnik
 {
     public partial class Ocena : Form
     {
+        DataTable dt_ocena;
+        
         public Ocena()
         {
             InitializeComponent();
@@ -69,6 +71,14 @@ namespace E_Dnevnik
             {
                 cmb_PredmetPopulate();
                 cmb_Predmet.Enabled = true;
+                cmb_Odeljenje.SelectedIndex = -1;
+                cmb_Odeljenje.Enabled = false;
+                cmb_Ucenik.SelectedIndex = -1;
+                cmb_Ucenik.Enabled = false;
+                cmb_Ocena.SelectedIndex = -1;
+                cmb_Ocena.Enabled = false;
+                dt_ocena = new DataTable();
+                Grid_Ocene.DataSource = dt_ocena;
             }
         }
         private void cmb_PredmetPopulate()
@@ -93,6 +103,12 @@ namespace E_Dnevnik
                 cmb_OdeljenjePopulate();
                 cmb_Odeljenje.Enabled = true;
                 cmb_Odeljenje.SelectedIndex = -1;
+                cmb_Ucenik.SelectedIndex = -1;
+                cmb_Ucenik.Enabled = false;
+                cmb_Ocena.SelectedIndex = -1;
+                cmb_Ocena.Enabled = false;
+                dt_ocena = new DataTable();
+                Grid_Ocene.DataSource = dt_ocena;
             }
         }
         private void cmb_OdeljenjePopulate()
@@ -116,7 +132,9 @@ namespace E_Dnevnik
             {
                 cmb_UcenikPopulate();
                 cmb_Ucenik.Enabled = true;
+                cmb_Ocena.Enabled = true;
                 GridPopulate();
+                UcenikOcenaIdSet(0);
             }
         }
         private void cmb_UcenikPopulate()
@@ -151,6 +169,107 @@ namespace E_Dnevnik
             Grid_Ocene.DataSource = dt_ocena;
             Grid_Ocene.AllowUserToAddRows = false;
             Grid_Ocene.Columns["ucenik_id"].Visible = false;
+        }
+        private void Grid_Ocene_CellClick(object sender, EventArgs e)
+        {
+            if(e.RowIndex >= 0)
+            {
+                UcenikOcenaIdSet(e.RowIndex);
+            }
+        }
+        private void UcenikOcenaIdSet ( int broj_sloga )
+        {
+            cmb_Ucenik.SelectedValue = dt_ocena.Rows[e.RowIndex]["ucenik_id"];
+            cmb_Ocena.SelectedItem = dt_ocena.Rows[e.RowIndex]["ocena"];
+            txt_Id.Text = dt_ocena.Rows[e.RowIndex]["id"].ToString();
+        }
+        private void btn_Insert_Click(object sender, EventArgs e)
+        {
+            StringBuilder naredba = new StringBuilder("SELECT id FROM raspodela ");
+            naredba.Append(" WHERE godina_id = " + cmb_Godina.SelectedValue.ToString());
+            naredba.Append(" AND nastavnik_id = " + cmb_Profesor.SelectedValue.ToString());
+            naredba.Append(" AND predmet_id = " + cmb_Predmet.SelectedValue.ToString());
+            naredba.Append(" AND odeljenje_id = " + cmb_Odeljenje.SelectedValue.ToString() + ")" );
+            SqlConnection veza = Konekcija.Connect();
+            SqlCommand Komanda = new SqlCommand(naredba.ToString(), veza);
+            int id_raspodele = 0;
+            try
+            {
+                veza.Open();
+                id_raspodele = (int) Komanda.ExecuteScalar();
+                veza.Close();
+            }
+            catch(Exception Greska)
+            {
+                MessageBox.Show(Greska.Message);
+            }
+            if(id_raspodele > 0)
+            {
+                naredba = new StringBuilder("INSERT INTO ocena (datum, raspodela_id, ucenik_id, ocena) VALUES('");
+                DateTime datum = Datum.Value;
+                naredba.Append(datum.ToString("yyyy-MM-dd") + "', '");
+                naredba.Append(id_raspodele.ToString() + "', '");
+                naredba.Append(cmb_Ucenik.SelectedValue.ToString() + "', '");
+                naredba.Append(cmb_Ocena.SelectedItem.ToString() + "')");
+                Komanda = new SqlCommand(naredba.ToString(), veza);
+                try
+                {
+                    veza.Open();
+                    Komanda.ExecuteNonQuery();
+                    veza.Close();
+                }
+                catch(Exception Greska)
+                {
+                    MessageBox.Show(Greska.Message);
+                }
+            }
+            GridPopulate();
+        }
+        private void btn_Update_Click(object sender, EventArgs e)
+        {
+            if(Convert.ToInt32(txt_Id.Text) > 0)
+            {
+                DateTime datum = Datum.Value;
+                StringBuilder naredba = new StringBuilder("UPDATE ocena SET ");
+                naredba.Append(" ucenik_id = '" + cmb_Ucenik.SelectedValue.ToString() + "', ");
+                naredba.Append(" ocena = '" + cmb_Ocena.SelectedValue.ToString() + "', ");
+                naredba.Append(" datum = '" + datum.ToString("yyyy-MM-dd") + "' ");
+                naredba.Append(" WHERE id = " + txt_Id.Text);
+                SqlConnection veza = Konekcija.Connect();
+                SqlCommand Komanda = new SqlCommand(naredba.ToString(), veza);
+                try
+                {
+                    veza.Open();
+                    Komanda.ExecuteNonQuery();
+                    veza.Close();
+                }
+                catch(Exception Greska)
+                {
+                    MessageBox.Show(Greska.Message);
+                }
+                GridPopulate();
+            }
+        }
+        private void btn_Delete_Click(object sender, EventArgs e)
+        {
+            if(Convert.ToInt32(txt_Id.Text) > 0)
+            {
+                string naredba = "DELETE FROM ovena WHERE id = " + txt_Id.Text;
+                SqlConnection veza = Konekcija.Connect();
+                SqlCommand Komanda = new SqlCommand(naredba, veza);
+                try
+                {
+                    veza.Open();
+                    Komanda.ExecuteNonQuery();
+                    veza.Close();
+                    GridPopulate();
+                    UcenikOcenaIdSet(0);
+                }
+                catch(Exception Greska)
+                {
+                    MessageBox.Show(Greska.Message);
+                }
+            }
         }
     }
 }
